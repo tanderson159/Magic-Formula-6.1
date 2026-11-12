@@ -2,7 +2,7 @@
 
 % Data files
 dataFile = 'data/B1965run16.mat';
-tirFile = 'data/sample.tir'; % TODO: Replace with TIR file from current MF model
+tirFile = 'data/sample.tir'; % TODO: Replace with TIR file from current tire model
 
 % Load the tire data into a structure
 % Tire model: Hoosier 43075 16x7.5-10 LCO
@@ -14,9 +14,9 @@ InitialParameterSet = mfeval.readTIR(tirFile);
 
 % Set nominal parameters of the model based on reference data
 InitialParameterSet.UNLOADED_RADIUS = 0.206; % Unloaded tire radius
-InitialParameterSet.FNOMIN = median(fz); % Nominal load
-InitialParameterSet.LONGVL = median(v); % Nominal reference speed
-InitialParameterSet.NOMPRES = 55000; % Nominal inflation pressure
+InitialParameterSet.FNOMIN = 650; % Nominal load
+InitialParameterSet.LONGVL = median(RawTireData.V); % Nominal reference speed
+InitialParameterSet.NOMPRES = 70000; % Nominal inflation pressure
 
 % Create a vector of initial lateral parameters for fitting
 x0 = zeros(1, 27);
@@ -92,7 +92,36 @@ OptimParameterSet.PPY5 = X_OPTIM(27);
 
 % === PLOT RESULTS ===
 
+% Create data inputs to check the fitting quality
+evalFz = ones(100, 1) * 650;
+evalNull = zeros(100, 1);
+evalSa = linspace(-0.22, 0.22);
+evalV = ones(100, 1) * 40;
+evalP = ones(100, 1) * 70000;
+
+USE_MODE = 211;
+
+INPUT = [evalFz evalNull evalSa evalNull evalNull evalV evalP evalNull];
+
+% Call MFeval with optimized parameters
+OUTPUT = mfeval(OptimParameterSet, INPUT, USE_MODE);
+
+% Plot raw data vs. fitted model
+sa = deg2rad(RawTireData.SA); % rad
+fy = RawTireData.FY; % N
+
+figure;
+hold on;
+plot(sa, fy, 'o');
+plot(OUTPUT(:, 8), OUTPUT(:, 2), '-', 'linewidth', 2);
+grid on;
+xlabel('Slip Angle (rad)');
+ylabel('Lateral Force (N)');
+title('Pure Lateral Slip Fitting');
+legend('Data', 'Model');
+
 % === COST FUNCTION ===
+
 % TODO: Fix so that lsqnonlin converges (likely due to bad TIR file)
 function [error] = costPureFy(X, Data, ParameterSet)
     % COSTPUREFY Call MFeval and calculate the error between the model and the input data.
@@ -117,7 +146,7 @@ function [error] = costPureFy(X, Data, ParameterSet)
 
     % Create the inputs for MFeval
     % NOTE: Turn slip is neglected
-    INPUTS = [fz, sl, sa, ia, phit, v, p, n];
+    INPUTS = [fz sl sa ia phit v p n];
 
     % Select a use mode for MFeval
     % +1 -> Combined force/moment calculation
@@ -158,7 +187,7 @@ function [error] = costPureFy(X, Data, ParameterSet)
     % Call MFeval
     OUTPUT = mfeval(ParameterSet, INPUTS, USE_MODE);
 
-    % Extract the Fy from the MFeval output
+    % Extract Fy from the MFeval output
     fy_pred = OUTPUT(:, 2);
 
     % Calculate prediction error against the data
