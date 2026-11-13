@@ -1,0 +1,201 @@
+[MDI_HEADER]
+FILE_TYPE                 = 'tir'
+FILE_VERSION              = 3.0
+FILE_FORMAT               = 'ASCII'
+$-------------------------------------------------------------------------------
+$ HyTech Racing - Magic Formula tyre property file (MF5.2 layout + TAVD terms)
+$ Pure lateral (Fy), aligning (Mz): Hoosier 16x7.5-10 LCO, 8 in rim, 8 psi
+$     TTC Round 8, Run 16 (B1965run16)
+$ Pure longitudinal (Fx) and combined slip: Hoosier 18x7.5-10 R25B, 8 psi
+$     TTC Round 6, Run 36 (B1654run36)
+$ Coefficients: 16x7.5-10_LCO_8_in_Rim.mat (A, B, C, D, E, F, G) from HyTech_MF52_fit.m
+$
+$ NOTES ON THIS FIT:
+$  * Your Pacejka52_*.m functions implement the TAVD book equations, which add
+$    PEY5, PKY4-PKY7, RBX3 and RBY4 to MF5.2 (MF6.1-style terms), use 1/(1+PKY3*g^2)
+$    and 1/(1+PDY3*g^2) for camber, take |mu_y|, and do not limit E to <= 1.
+$    MF_EQUATIONS = 'TAVD' tells fsae_lapsim to evaluate exactly those equations.
+$    Other tools ignore that key; FITTYP = 61 makes them use MF6.1, which is the
+$    closest standard set (camber and E > 1 will differ from your MATLAB).
+$  * Fz is positive in the formulas (your functions use abs(FZ)); SA/IA are
+$    converted from TTC SAE degrees to radians, alpha = -SA, as in your code.
+$  * Not included: FX_EXTRAPOLATION_COEFF (applied for |SL| >= 0.2 in
+$    getTireForces.m) - that function was not part of the fit outputs.
+$  * Scaling factors are all 1 (as in the fit), except LMUV = 0.
+$-------------------------------------------------------------------------------
+$
+$ HOW A .TIR FILE IS STRUCTURED
+$  * '$' starts a comment. Lines read: NAME = value. Strings go in single quotes.
+$  * [SECTION] headers group the values. Solvers look up values by name, so the
+$    order inside a section does not matter, but each name must be in its section.
+$  * [UNITS] says how to read every number: here SI, angles in radians.
+$  * [MODEL]: which formula/version and which side of the car the tyre is.
+$  * [DIMENSION], [VERTICAL]: radius (R0) and nominal load (FNOMIN = FZO in your
+$    script; dfz = (Fz - FNOMIN*LFZO)/(FNOMIN*LFZO) in every formula).
+$  * [*_RANGE]: the slip / load / camber range the data covered.
+$  * [SCALING_COEFFICIENTS]: the lambda factors (L...), 1 = use the fit as is.
+$  * Then one section per force/moment: P..X / R..X -> LONGITUDINAL,
+$    Q.SX -> OVERTURNING, P..Y / R..Y -> LATERAL, Q.SY -> ROLLING,
+$    Q..Z / SSZ -> ALIGNING. P = pure slip, R = combined slip, Q = moments.
+$  * Copy each fitted vector element into its name, in the same order as the
+$    *_str list in the script (e.g. A(1) -> PCY1, A(2) -> PDY1, ...).
+$-------------------------------------------------------------------------------
+$---------------------------------------------------------------------------units
+[UNITS]
+LENGTH                    = 'meter'
+FORCE                     = 'newton'
+ANGLE                     = 'radian'
+MASS                      = 'kg'
+TIME                      = 'second'
+$---------------------------------------------------------------------------model
+[MODEL]
+FITTYP                    = 61                   $ Closest standard set for other tools (MF6.1)
+MF_EQUATIONS              = 'TAVD'               $ fsae_lapsim: evaluate exactly like Pacejka52_*.m
+TYRESIDE                  = 'LEFT'               $ Side the coefficients describe
+LONGVL                    = 10                   $ Reference speed [m/s] (VCX in script)
+VXLOW                     = 1                    $ Low-speed limit [m/s]
+$-----------------------------------------------------------------------dimension
+[DIMENSION]
+UNLOADED_RADIUS           = 0.2032               $ Free tyre radius R0 [m] (RO in script)
+$------------------------------------------------------------------------vertical
+[VERTICAL]
+FNOMIN                    = 1100                 $ Nominal wheel load [N] (FZO in script)
+$---------------------------------------------------------------slip_angle_range
+$ Validity limits are commented out so the model extrapolates like your MATLAB.
+$ Remove the leading '$' to make a solver clamp to the tested range instead.
+[SLIP_ANGLE_RANGE]
+$ALPMIN                   = -0.2094395102        $ -12 deg, extent of fitted SA sweeps
+$ALPMAX                   = 0.2094395102         $ +12 deg
+$-----------------------------------------------------------vertical_force_range
+[VERTICAL_FORCE_RANGE]
+$FZMAX                    = 1100                 $ Highest tested normal load [N]
+$------------------------------------------------------------scaling_coefficients
+[SCALING_COEFFICIENTS]
+LFZO                      = 1                     $ Scale factor of nominal (rated) load
+LCX                       = 1                     $ Scale factor of Fx shape factor
+LMUX                      = 1                     $ Scale factor of Fx peak friction coefficient
+LEX                       = 1                     $ Scale factor of Fx curvature factor
+LKX                       = 1                     $ Scale factor of Fx slip stiffness (LKXKAPPA)
+LHX                       = 1                     $ Scale factor of Fx horizontal shift
+LVX                       = 1                     $ Scale factor of Fx vertical shift
+LGAX                      = 1                     $ Scale factor of camber for Fx
+LCY                       = 1                     $ Scale factor of Fy shape factor
+LMUY                      = 1                     $ Scale factor of Fy peak friction coefficient
+LEY                       = 1                     $ Scale factor of Fy curvature factor
+LKY                       = 1                     $ Scale factor of Fy cornering stiffness (LKYALPHA)
+LHY                       = 1                     $ Scale factor of Fy horizontal shift
+LVY                       = 1                     $ Scale factor of Fy vertical shift
+LGAY                      = 1                     $ Scale factor of camber for Fy
+LKYC                      = 1                     $ Scale factor of camber stiffness (LKYGAMMA)
+LKZC                      = 1                     $ Scale factor of camber torque stiffness (LKZGAMMA)
+LTR                       = 1                     $ Scale factor of peak of pneumatic trail (LT)
+LRES                      = 1                     $ Scale factor for offset of residual torque (LMR)
+LGAZ                      = 1                     $ Scale factor of camber for Mz
+LXAL                      = 1                     $ Scale factor of alpha influence on Fx (LXALPHA)
+LYKA                      = 1                     $ Scale factor of kappa influence on Fy (LYKAPPA)
+LVYKA                     = 1                     $ Scale factor of kappa induced Fy (LVYKAPPA)
+LS                        = 1                     $ Scale factor of moment arm of Fx
+LMX                       = 1                     $ Scale factor of overturning couple
+LMY                       = 1                     $ Scale factor of rolling resistance torque
+LMUV                      = 0                     $ Scale factor with slip speed decaying friction (0 in script)
+$-------------------------------------------------------longitudinal_coefficients
+[LONGITUDINAL_COEFFICIENTS]
+PCX1                      = 1.203488764           $ Shape factor Cfx
+PDX1                      = 3.223106488           $ Longitudinal friction Mux at Fznom
+PDX2                      = -1.429377199          $ Variation of friction Mux with load
+PDX3                      = 19.15926828           $ Variation of friction Mux with camber^2
+PEX1                      = 0.1940276391          $ Longitudinal curvature Efx at Fznom
+PEX2                      = -3.156299239          $ Variation of curvature Efx with load
+PEX3                      = -3.671918387          $ Variation of curvature Efx with load^2
+PEX4                      = 0.1225092292          $ Factor in curvature Efx while driving
+PKX1                      = 51.78286796           $ Longitudinal slip stiffness Kfx/Fz at Fznom
+PKX2                      = -0.01633972762        $ Variation of slip stiffness Kfx/Fz with load
+PKX3                      = -0.6794871952         $ Exponent in slip stiffness Kfx/Fz with load
+PHX1                      = 0.001327763142        $ Horizontal shift Shx at Fznom
+PHX2                      = -0.0002391651608      $ Variation of shift Shx with load
+PVX1                      = -0.09333555197        $ Vertical shift Svx/Fz at Fznom
+PVX2                      = 0.05722063582         $ Variation of shift Svx/Fz with load
+RBX1                      = 0.1847722352          $ Slope factor for combined slip Fx reduction
+RBX2                      = 1.068602808           $ Variation of slope Fx reduction with kappa
+RBX3                      = 0.09244278032         $ Influence of camber on stiffness for Fx combined
+RCX1                      = 48.05055919           $ Shape factor for combined slip Fx reduction
+REX1                      = 378.6317375           $ Curvature factor of combined Fx
+REX2                      = -451.5808363          $ Curvature factor of combined Fx with load
+RHX1                      = -1.433851144e-06      $ Shift factor for combined slip Fx reduction
+$--------------------------------------------------------overturning_coefficients
+[OVERTURNING_COEFFICIENTS]
+QSX1                      = 0.03371087279         $ Vertical shift of overturning moment
+QSX2                      = -1.698974413          $ Camber induced overturning couple
+QSX3                      = -0.1013116841         $ Fy induced overturning couple
+$------------------------------------------------------------lateral_coefficients
+[LATERAL_COEFFICIENTS]
+PCY1                      = 1.231359642           $ Shape factor Cfy
+PDY1                      = -2.621841915          $ Lateral friction Muy
+PDY2                      = 0.4940887496          $ Variation of friction Muy with load
+PDY3                      = -0.1156292598         $ Variation of friction Muy with camber^2
+PEY1                      = -0.0002003997787      $ Lateral curvature Efy at Fznom
+PEY2                      = -6.162481168e-05      $ Variation of curvature Efy with load
+PEY3                      = -6462.457905          $ Zero order camber dependency of curvature Efy
+PEY4                      = -8275.530512          $ Variation of curvature Efy with camber
+PEY5                      = -183377.6038          $ Camber^2 curvature Efy (TAVD 2nd ed / MF6.1 term)
+PKY1                      = -7315.644774          $ Maximum value of stiffness Kfy/Fznom
+PKY2                      = 0.4278236378          $ Load at which Kfy reaches maximum value
+PKY3                      = -13.92972495          $ Variation of Kfy/Fznom with camber
+PKY4                      = 0.003349162114        $ Curvature of stiffness Kfy (TAVD 2nd ed / MF6.1 term)
+PKY5                      = 32.4749419            $ Peak stiffness variation with camber^2 (TAVD 2nd ed / MF6.1 term)
+PKY6                      = -5.392420613          $ Fy camber stiffness factor (TAVD 2nd ed / MF6.1 term)
+PKY7                      = -1.143711839          $ Vertical load dependency of camber stiffness (TAVD 2nd ed / MF6.1 term)
+PHY1                      = 0.01303832793         $ Horizontal shift Shy at Fznom
+PHY2                      = 0.0112960688          $ Variation of shift Shy with load
+PVY1                      = 0.3927681089          $ Vertical shift in Svy/Fz at Fznom
+PVY2                      = 0.1175912637          $ Variation of shift Svy/Fz with load
+PVY3                      = 2.419643858           $ Variation of shift Svy/Fz with camber
+PVY4                      = -2.279933821          $ Variation of shift Svy/Fz with camber and load
+RBY1                      = 1260.010241           $ Slope factor for combined Fy reduction
+RBY2                      = 73.13374385           $ Variation of slope Fy reduction with alpha
+RBY3                      = -0.8434204281         $ Shift term for alpha in slope Fy reduction
+RBY4                      = -11015.2144           $ Influence of camber on stiffness of Fy combined (TAVD 2nd ed / MF6.1 term)
+RCY1                      = -0.8216499357         $ Shape factor for combined Fy reduction
+REY1                      = -0.7041199954         $ Curvature factor of combined Fy
+REY2                      = -1.523000001          $ Curvature factor of combined Fy with load
+RHY1                      = 0.018803506           $ Shift factor for combined Fy reduction
+RHY2                      = 0.03222492071         $ Shift factor for combined Fy reduction with load
+RVY1                      = -0.02817000431        $ Kappa induced side force Svyk/Muy*Fz at Fznom
+RVY2                      = -0.05274699956        $ Variation of Svyk/Muy*Fz with load
+RVY3                      = -0.1252200004         $ Variation of Svyk/Muy*Fz with camber
+RVY4                      = 304.8565012           $ Variation of Svyk/Muy*Fz with alpha
+RVY5                      = 2.990100001           $ Variation of Svyk/Muy*Fz with kappa
+RVY6                      = -10.6519              $ Variation of Svyk/Muy*Fz with atan(kappa)
+$-----------------------------------------------------------aligning_coefficients
+[ALIGNING_COEFFICIENTS]
+QBZ1                      = 4.952642264           $ Trail slope factor for trail Bpt at Fznom
+QBZ2                      = -7.242286278          $ Variation of slope Bpt with load
+QBZ3                      = -10.43397121          $ Variation of slope Bpt with load^2
+QBZ5                      = 0.7794419184          $ Variation of slope Bpt with absolute camber
+QBZ6                      = -9.714790415          $ Camber influence Bt
+QBZ9                      = -2.989328033          $ Slope factor Br of residual torque Mzr
+QBZ10                     = -2.255305465          $ Slope factor Br of residual torque Mzr
+QCZ1                      = 1.902676144           $ Shape factor Cpt for pneumatic trail
+QDZ1                      = 0.2311338758          $ Peak trail Dpt = Dpt*(Fz/Fznom*R0)
+QDZ2                      = -0.2054303409         $ Variation of peak Dpt with load
+QDZ3                      = 0.555810153           $ Variation of peak Dpt with camber
+QDZ4                      = -18.18623046          $ Variation of peak Dpt with camber^2
+QDZ6                      = 0.01383423656         $ Peak residual torque Dmr = Dmr/(Fz*R0)
+QDZ7                      = -0.00346292887        $ Variation of peak factor Dmr with load
+QDZ8                      = -3.681088524          $ Variation of peak factor Dmr with camber
+QDZ9                      = 0.2768442204          $ Variation of peak factor Dmr with camber and load
+QDZ10                     = 9.014245428           $ Variation of peak factor Dmr with camber^2
+QDZ11                     = -19.44165324          $ Variation of Dmr with camber^2 and load
+QEZ1                      = 0.2350899269          $ Trail curvature Ept at Fznom
+QEZ2                      = -3.374976567          $ Variation of curvature Ept with load
+QEZ3                      = -6.140652427          $ Variation of curvature Ept with load^2
+QEZ4                      = 0.0216514803          $ Variation of curvature Ept with sign of Alpha-t
+QEZ5                      = -1.437294065          $ Variation of Ept with camber and sign Alpha-t
+QHZ1                      = 0.001520098987        $ Trail horizontal shift Sht at Fznom
+QHZ2                      = 0.002500590445        $ Variation of shift Sht with load
+QHZ3                      = -0.1948723242         $ Variation of shift Sht with camber
+QHZ4                      = -0.3617895423         $ Variation of shift Sht with camber and load
+SSZ1                      = -0.01858190849        $ Nominal value of s/R0: effect of Fx on Mz
+SSZ2                      = -0.052489029          $ Variation of distance s/R0 with Fy/Fznom
+SSZ3                      = 0.0354663977          $ Variation of distance s/R0 with camber
+SSZ4                      = -0.5592623316         $ Variation of distance s/R0 with load and camber
